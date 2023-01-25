@@ -1,0 +1,27 @@
+apiVersion: metallb.io/v1beta1
+kind: AddressPool
+metadata:
+  name: bgp4
+  namespace: metallb-system
+spec:
+  addresses:
+  - 192.168.0.100-192.168.0.103
+  autoAssign: true
+  protocol: bgp
+  bgpAdvertisements:
+    - communities: 
+       - 65535:65282
+---
+apiVersion: metallb.io/v1beta1
+kind: AddressPool
+metadata:
+  name: bgp6
+  namespace: metallb-system
+spec:
+  addresses:
+  - 2000::100-2000::103
+  autoAssign: true
+  protocol: bgp
+  bgpAdvertisements:
+    - communities: 
+       - 65535:65282

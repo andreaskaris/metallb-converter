@@ -1,0 +1,21 @@
+apiVersion: metallb.io/v1beta1
+kind: AddressPool
+metadata:
+  name: l24
+  namespace: metallb-system
+spec:
+  addresses:
+  - 192.168.0.200-192.168.0.203
+  autoAssign: true
+  protocol: layer2
+---
+apiVersion: metallb.io/v1beta1
+kind: AddressPool
+metadata:
+  name: l26
+  namespace: metallb-system
+spec:
+  addresses:
+  - 2000::200-2000::203
+  autoAssign: true
+  protocol: layer2
