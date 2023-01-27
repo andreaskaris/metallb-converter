@@ -30,7 +30,6 @@ func main() {
 	flag.Parse()
 
 	var c client.Client
-	var legacyObjects *converter.LegacyObjects
 	var scheme = runtime.NewScheme()
 	err := metallbv1beta1.AddToScheme(scheme)
 	if err != nil {
@@ -51,7 +50,7 @@ func main() {
 		}
 	}
 
-	// Retrieval step.
+	// Set up the client.
 	if *inDirFlag == "" {
 		conf, err := config.GetConfig()
 		if err != nil {
@@ -61,38 +60,18 @@ func main() {
 		if err != nil {
 			log.Fatal(err)
 		}
-		legacyObjects, err = converter.ReadLegacyObjectsFromAPI(c)
-		if err != nil {
-			log.Fatal(err)
-		}
-	} else {
-		legacyObjects, err = converter.ReadLegacyObjectsFromDirectory(scheme, *inDirFlag)
-		if err != nil {
-			log.Fatal(err)
-		}
 	}
 
-	// Conversion step.
-	currentObjects, err := converter.Convert(legacyObjects)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	// Print step.
+	// Either print to stdout or to directory ..o
 	if !*migrationFlag {
-		err = converter.PrintObjects(currentObjects, *outDirFlag, *jsonFlag)
+		err = converter.OfflineMigration(c, scheme, *inDirFlag, *outDirFlag, *jsonFlag)
 		if err != nil {
 			log.Fatal(err)
 		}
 		return
 	}
-
-	// Migration step - only executed if we shall not print.
-	err = converter.PrintObjects(legacyObjects, *backupDirFlag, *jsonFlag)
-	if err != nil {
-		log.Fatal(err)
-	}
-	err = converter.OnlineMigration(c, *legacyObjects, *currentObjects)
+	// or migrate the API objects directly.
+	err = converter.OnlineMigration(c, scheme, *backupDirFlag, *jsonFlag)
 	if err != nil {
 		log.Fatal(err)
 	}

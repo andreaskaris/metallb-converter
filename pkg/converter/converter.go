@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"log"
 	"os"
 	"path"
 	"reflect"
@@ -21,9 +22,10 @@ import (
 
 const (
 	// ProtocolBGP is a string representation of the BGP protocol.
-	ProtocolBGP             = "bgp"
-	ProtocolLayer2          = "layer2"
-	supportedlegacyGKVGroup = "metallb.io"
+	ProtocolBGP       = "bgp"
+	ProtocolLayer2    = "layer2"
+	metallbAPIGroup   = "metallb.io"
+	metallbAPIVersion = "metallb.io/v1beta1"
 )
 
 var (
@@ -49,7 +51,7 @@ func (l LegacyObjects) Delete(c client.Client) error {
 	for _, ap := range l.AddressPoolList.Items {
 		err := c.Delete(context.TODO(), &ap)
 		if err != nil && !apierrors.IsNotFound(err) {
-			return err
+			return fmt.Errorf("cannot delete legacyObject AddressPool '%s', err: %w", ap.Name, err)
 		}
 	}
 	return nil
@@ -60,7 +62,7 @@ func (l LegacyObjects) Create(c client.Client) error {
 	for _, ap := range l.AddressPoolList.Items {
 		err := c.Create(context.TODO(), &ap)
 		if err != nil {
-			return err
+			return fmt.Errorf("cannot create legacyObject AddressPool '%s', err: %w", ap.Name, err)
 		}
 	}
 	return nil
@@ -78,19 +80,19 @@ func (c CurrentObjects) Delete(cl client.Client) error {
 	for _, iap := range c.IPAddressPoolList.Items {
 		err := cl.Delete(context.TODO(), &iap)
 		if err != nil && !apierrors.IsNotFound(err) {
-			return err
+			return fmt.Errorf("cannot delete currentObject IPAddressPool '%s', err: %w", iap.Name, err)
 		}
 	}
 	for _, ba := range c.BGPAdvertisementList.Items {
 		err := cl.Delete(context.TODO(), &ba)
 		if err != nil && !apierrors.IsNotFound(err) {
-			return err
+			return fmt.Errorf("cannot delete currentObject BGPAdvertisement '%s', err: %w", ba.Name, err)
 		}
 	}
 	for _, l2a := range c.L2AdvertisementList.Items {
 		err := cl.Delete(context.TODO(), &l2a)
 		if err != nil && !apierrors.IsNotFound(err) {
-			return err
+			return fmt.Errorf("cannot delete currentObject L2Advertisement '%s', err: %w", l2a.Name, err)
 		}
 	}
 	return nil
@@ -101,31 +103,45 @@ func (c CurrentObjects) Create(cl client.Client) error {
 	for _, iap := range c.IPAddressPoolList.Items {
 		err := cl.Create(context.TODO(), &iap)
 		if err != nil {
-			return err
+			return fmt.Errorf("cannot create currentObject IPAddressPool '%s', err: %w", iap.Name, err)
 		}
 	}
 	for _, ba := range c.BGPAdvertisementList.Items {
 		err := cl.Create(context.TODO(), &ba)
 		if err != nil {
-			return err
+			return fmt.Errorf("cannot create currentObject BGPAdvertisement '%s', err: %w", ba.Name, err)
 		}
 	}
 	for _, l2a := range c.L2AdvertisementList.Items {
 		err := cl.Create(context.TODO(), &l2a)
 		if err != nil {
-			return err
+			return fmt.Errorf("cannot create currentObject L2Advertisement '%s', err: %w", l2a.Name, err)
 		}
 	}
 	return nil
 }
 
 // ReadLegacyObjectsFromAPI reads legacy metallb objects from the API.
-func ReadLegacyObjectsFromAPI(c client.Client) (*LegacyObjects, error) {
+func ReadLegacyObjectsFromAPI(c client.Client, limit int) (*LegacyObjects, error) {
+	if limit < 0 {
+		return nil, fmt.Errorf("invalid limit %d", limit)
+	}
+
 	addressPoolList := &metallbv1beta1.AddressPoolList{}
-	err := c.List(context.Background(), addressPoolList)
+	err := c.List(context.Background(), addressPoolList, client.Limit(limit))
 	if err != nil {
 		return nil, fmt.Errorf("failed to list AddressPools in cluster: %v\n", err)
 	}
+	addressPoolList.Kind = "AddressPoolList"
+	addressPoolList.APIVersion = metallbAPIVersion
+
+	// We need the following to accomodate the fake client: https://github.com/kubernetes/client-go/issues/793
+	if limit > 0 {
+		if len(addressPoolList.Items) > limit {
+			addressPoolList.Items = addressPoolList.Items[:limit]
+		}
+	}
+
 	return &LegacyObjects{
 		AddressPoolList: addressPoolList,
 	}, nil
@@ -152,7 +168,7 @@ func ReadLegacyObjectsFromDirectory(scheme *runtime.Scheme, dir string) (*Legacy
 			if err != nil {
 				return nil, fmt.Errorf("could not read legacy objects from directory, err: %q", err)
 			}
-			if gkv.Group != supportedlegacyGKVGroup {
+			if gkv.Group != metallbAPIGroup {
 				return nil, fmt.Errorf("could not read legacy objects from directory, invalid gkv.Group %q", gkv.Group)
 			}
 			if _, ok := supportedLegacyGKVVersions[gkv.Version]; !ok {
@@ -179,17 +195,17 @@ func ReadLegacyObjectsFromDirectory(scheme *runtime.Scheme, dir string) (*Legacy
 func Convert(legacyObjects *LegacyObjects) (*CurrentObjects, error) {
 	apl := legacyObjects.AddressPoolList
 	iapl := &metallbv1beta1.IPAddressPoolList{
-		TypeMeta: metav1.TypeMeta{Kind: "IPAddressPoolList", APIVersion: "metallb.io/v1beta1"},
+		TypeMeta: metav1.TypeMeta{Kind: "IPAddressPoolList", APIVersion: metallbAPIVersion},
 	}
 	l2al := &metallbv1beta1.L2AdvertisementList{
-		TypeMeta: metav1.TypeMeta{Kind: "L2AdvertisementList", APIVersion: "metallb.io/v1beta1"},
+		TypeMeta: metav1.TypeMeta{Kind: "L2AdvertisementList", APIVersion: metallbAPIVersion},
 	}
 	bal := &metallbv1beta1.BGPAdvertisementList{
-		TypeMeta: metav1.TypeMeta{Kind: "BGPAdvertisementList", APIVersion: "metallb.io/v1beta1"},
+		TypeMeta: metav1.TypeMeta{Kind: "BGPAdvertisementList", APIVersion: metallbAPIVersion},
 	}
 	for _, ap := range apl.Items {
 		iap := metallbv1beta1.IPAddressPool{
-			TypeMeta:   metav1.TypeMeta{Kind: "IPAddressPool", APIVersion: "metallb.io/v1beta1"},
+			TypeMeta:   metav1.TypeMeta{Kind: "IPAddressPool", APIVersion: metallbAPIVersion},
 			ObjectMeta: metav1.ObjectMeta{Name: ap.ObjectMeta.Name, Namespace: ap.ObjectMeta.Namespace},
 			Spec: metallbv1beta1.IPAddressPoolSpec{
 				Addresses:  ap.Spec.Addresses,
@@ -202,7 +218,7 @@ func Convert(legacyObjects *LegacyObjects) (*CurrentObjects, error) {
 		if ap.Spec.Protocol == ProtocolLayer2 {
 			name := fmt.Sprintf("%s-l2-advertisement", ap.Name)
 			l2a := metallbv1beta1.L2Advertisement{
-				TypeMeta:   metav1.TypeMeta{Kind: "L2Advertisement", APIVersion: "metallb.io/v1beta1"},
+				TypeMeta:   metav1.TypeMeta{Kind: "L2Advertisement", APIVersion: metallbAPIVersion},
 				ObjectMeta: metav1.ObjectMeta{Name: name, Namespace: ap.Namespace},
 				Spec: metallbv1beta1.L2AdvertisementSpec{
 					IPAddressPools: []string{ap.Name},
@@ -218,10 +234,10 @@ func Convert(legacyObjects *LegacyObjects) (*CurrentObjects, error) {
 				legacyBGPAdvertisements = append(legacyBGPAdvertisements, metallbv1beta1.LegacyBgpAdvertisement{})
 			}
 			for i := 0; i < len(legacyBGPAdvertisements); i++ {
-				name := fmt.Sprintf("%s-l2-advertisement-%d", ap.Name, i)
+				name := fmt.Sprintf("%s-bgp-advertisement-%d", ap.Name, i)
 				advertisement := legacyBGPAdvertisements[i]
 				ba := metallbv1beta1.BGPAdvertisement{
-					TypeMeta:   metav1.TypeMeta{Kind: "BGPAdvertisement", APIVersion: "metallb.io/v1beta1"},
+					TypeMeta:   metav1.TypeMeta{Kind: "BGPAdvertisement", APIVersion: metallbAPIVersion},
 					ObjectMeta: metav1.ObjectMeta{Name: name, Namespace: ap.Namespace},
 					Spec: metallbv1beta1.BGPAdvertisementSpec{
 						AggregationLength:   advertisement.AggregationLength,
@@ -273,7 +289,7 @@ func PrintObjects[T Objects](objects *T, targetDirectory string, toJSON bool) er
 				0644,
 			)
 			if err != nil {
-				return err
+				return fmt.Errorf("cannot create destination file, err: %w", err)
 			}
 			defer f.Close()
 			outWriter = f
@@ -284,7 +300,7 @@ func PrintObjects[T Objects](objects *T, targetDirectory string, toJSON bool) er
 		}
 		printedObj, err := printObj(currentObject, printer)
 		if err != nil {
-			return err
+			return fmt.Errorf("cannot print object, err: %w", err)
 		}
 		fmt.Fprint(outWriter, strings.Trim(printedObj, "\n"))
 	}
@@ -297,19 +313,80 @@ func printObj(obj runtime.Object, printer printers.ResourcePrinter) (string, err
 	buf := new(bytes.Buffer)
 	err := printer.PrintObj(obj, buf)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("issue from printer.PrintObj, err: %w", err)
 	}
 	return buf.String(), nil
 }
 
-// OnlineMigration receives a set of Objects to delete and a set of Objects to create. It will delete all Objects to
-// delete one by one. Then, it will create the Objects to create.
-// Currently, the function cannot rollback on errors; instead, it will leave resources in a potentially inconsistent
-// state.
-func OnlineMigration[T Objects, U Objects](c client.Client, toDelete T, toCreate U) error {
-	err := toDelete.Delete(c)
-	if err != nil {
-		return err
+// OfflineMigration runs an offline migration. In other words, it reads input from the API or from a source directory
+// and either prints it to standard out or a destination directory.
+func OfflineMigration(c client.Client, scheme *runtime.Scheme, inDirFlag string, outDirFlag string, jsonFlag bool) error {
+	var err error
+	var legacyObjects *LegacyObjects
+	// Retrieval step.
+	if inDirFlag == "" {
+		legacyObjects, err = ReadLegacyObjectsFromAPI(c, 0)
+		if err != nil {
+			return fmt.Errorf("error during retrieval step, err: %w", err)
+		}
+	} else {
+		legacyObjects, err = ReadLegacyObjectsFromDirectory(scheme, inDirFlag)
+		if err != nil {
+			return fmt.Errorf("error during retrieval step, err: %w", err)
+		}
 	}
-	return toCreate.Create(c)
+	// Conversion step.
+	currentObjects, err := Convert(legacyObjects)
+	if err != nil {
+		return fmt.Errorf("error during conversion step, err: %w", err)
+	}
+
+	// Print step.
+	err = PrintObjects(currentObjects, outDirFlag, jsonFlag)
+	if err != nil {
+		return fmt.Errorf("error during print step, err: %w", err)
+	}
+	return nil
+}
+
+// OnlineMigration exectues online migration. It will migrate legacy API resources one by one to their current API
+// counterparts.
+// Currently, this function cannot roll back. In case of failure, modified objects will be left as is.
+func OnlineMigration(c client.Client, scheme *runtime.Scheme, backupDirFlag string, jsonFlag bool) error {
+	for {
+		// Retrieval step.
+		legacyObjects, err := ReadLegacyObjectsFromAPI(c, 1)
+		if err != nil {
+			return fmt.Errorf("error during retrieval step, err: %w", err)
+		}
+		if len(legacyObjects.AddressPoolList.Items) == 0 {
+			break
+		}
+
+		log.Printf("migrating AddressPool %s/%s ...", legacyObjects.AddressPoolList.Items[0].Namespace,
+			legacyObjects.AddressPoolList.Items[0].Name)
+
+		// Backup step.
+		err = PrintObjects(legacyObjects, backupDirFlag, jsonFlag)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		// Conversion step.
+		currentObjects, err := Convert(legacyObjects)
+		if err != nil {
+			return fmt.Errorf("error during conversion step, err: %w", err)
+		}
+
+		// Migration step.
+		err = legacyObjects.Delete(c)
+		if err != nil {
+			return fmt.Errorf("online migration failed during legacy object deletion, err: %w", err)
+		}
+		err = currentObjects.Create(c)
+		if err != nil {
+			return fmt.Errorf("online migration failed during current object creation, err: %w", err)
+		}
+	}
+	return nil
 }
