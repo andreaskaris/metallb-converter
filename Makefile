@@ -1,7 +1,7 @@
 FLAGS=GOFLAGS="-buildvcs=false"
 
 .PHONY: build
-build: lint
+build:
 	$(FLAGS) go build -o _build/metallb-converter .
 
 .PHONY: run
