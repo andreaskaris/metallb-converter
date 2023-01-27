@@ -2,9 +2,7 @@ package main
 
 import (
 	"flag"
-	"fmt"
 	"log"
-	"os"
 
 	"github.com/andreaskaris/metallb-converter/pkg/converter"
 	metallbv1beta1 "go.universe.tf/metallb/api/v1beta1"
@@ -34,10 +32,13 @@ func main() {
 
 	// Retrieval step.
 	if *inDirFlag == "" {
-		c, err := client.New(config.GetConfigOrDie(), client.Options{Scheme: scheme})
+		conf, err := config.GetConfig()
 		if err != nil {
-			fmt.Println("failed to create client")
-			os.Exit(1)
+			log.Fatalf("error getting kubernetes configuration, did you export KUBECONFIG? Received error: %q", err)
+		}
+		c, err := client.New(conf, client.Options{Scheme: scheme})
+		if err != nil {
+			log.Fatal(err)
 		}
 		legacyObjects, err = converter.ReadLegacyObjectsFromAPI(c)
 		if err != nil {
