@@ -15,6 +15,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/cli-runtime/pkg/printers"
 	"k8s.io/utils/pointer"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
@@ -445,7 +446,6 @@ func TestReadLegacyObjectsFromDirectory(t *testing.T) {
 }
 
 func TestConvert(t *testing.T) {
-	// Build client.
 	var scheme = runtime.NewScheme()
 	err := metallbv1beta1.AddToScheme(scheme)
 	if err != nil {
@@ -498,7 +498,7 @@ func TestConvert(t *testing.T) {
 		if len(tc.expectedTargetFiles) > 0 {
 			targetDir = t.TempDir()
 		}
-		err = PrintCurrentObjects(currentObjects, targetDir, false)
+		err = PrintObjects(currentObjects, targetDir, false)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -560,6 +560,156 @@ func TestPrintObj(t *testing.T) {
 		}
 		if tc.errStr == "" && output == "" {
 			t.Fatalf("TestPrintObj(%s): failed due to returned string being the empty string", desc)
+		}
+	}
+}
+
+func TestOnlineMigration(t *testing.T) {
+	var scheme = runtime.NewScheme()
+	err := metallbv1beta1.AddToScheme(scheme)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	tcs := map[string]struct {
+		inputAddressPoolList        []metallbv1beta1.AddressPool
+		outputAddressPoolCount      int
+		outputIPAddressPoolCount    int
+		outputBGPAdvertisementCount int
+		outputL2AdvertisementCount  int
+		errorStr                    string
+		transformerFunc             func(client.Client)
+	}{
+		"test case 0": {
+			inputAddressPoolList:        validAddressPools0,
+			outputAddressPoolCount:      0,
+			outputIPAddressPoolCount:    3,
+			outputBGPAdvertisementCount: 3,
+			outputL2AdvertisementCount:  1,
+			transformerFunc:             nil,
+		},
+		"test case 1": {
+			inputAddressPoolList:        validAddressPools0,
+			outputAddressPoolCount:      0,
+			outputIPAddressPoolCount:    3,
+			outputBGPAdvertisementCount: 3,
+			outputL2AdvertisementCount:  1,
+			transformerFunc: func(c client.Client) {
+				var apl metallbv1beta1.AddressPoolList
+				err := c.List(context.TODO(), &apl)
+				if err != nil {
+					t.Fatalf("TestOnlineMigration(test case 1): got error in transformer function on listing, err: %q",
+						err)
+				}
+				if len(apl.Items) != 3 {
+					t.Fatalf("TestOnlineMigration(test case 1): got error in  transformer function, expected to see 3 "+
+						"AddressPools but got %d", len(apl.Items))
+				}
+				err = c.Delete(context.TODO(), &apl.Items[0])
+				if err != nil {
+					t.Fatalf("TestOnlineMigration(test case 1): got error in transformer function on deletion, err: %q",
+						err)
+				}
+			},
+		},
+		"test case 2": {
+			inputAddressPoolList:        validAddressPools0,
+			outputAddressPoolCount:      3,
+			outputIPAddressPoolCount:    0,
+			outputBGPAdvertisementCount: 0,
+			outputL2AdvertisementCount:  0,
+			errorStr:                    "already exists",
+			transformerFunc: func(c client.Client) {
+				iap := metallbv1beta1.IPAddressPool{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "ap-l2",
+						Namespace: "metallb-system",
+					},
+					Spec: metallbv1beta1.IPAddressPoolSpec{
+						Addresses:  []string{"192.168.100.100"},
+						AutoAssign: pointer.Bool(true),
+					},
+					Status: metallbv1beta1.IPAddressPoolStatus{},
+				}
+				err := c.Create(context.TODO(), &iap)
+				if err != nil {
+					t.Fatalf("TestOnlineMigration(test case 2): got error in transformer function on creation, err: %q",
+						err)
+				}
+
+			},
+		},
+	}
+	for desc, tc := range tcs {
+		c := fake.NewClientBuilder().WithScheme(scheme).Build()
+		// Create objects in fake API.
+		for _, ap := range tc.inputAddressPoolList {
+			err := c.Create(context.TODO(), &ap)
+			if err != nil {
+				t.Fatal(err)
+			}
+		}
+		// Read.
+		legacyObjects, err := ReadLegacyObjectsFromAPI(c)
+		if err != nil {
+			t.Fatal(err)
+		}
+		// Call the transformer function and simultate that something's going wrong post read.
+		if tc.transformerFunc != nil {
+			tc.transformerFunc(c)
+		}
+		// Convert.
+		currentObjects, err := Convert(legacyObjects)
+		if err != nil {
+			log.Fatal(err)
+		}
+		// Migration step - only log the error if we encounter it.
+		err = OnlineMigration(c, *legacyObjects, *currentObjects)
+		if err != nil {
+			if tc.errorStr == "" || !strings.Contains(err.Error(), tc.errorStr) {
+				log.Fatalf("TestOnlineMigration(%s): expected error does not match. Expected: %q but got %q", desc,
+					tc.errorStr, err)
+			}
+			continue
+		} else if tc.errorStr != "" {
+			log.Fatalf("TestOnlineMigration(%s): expected error but got none instead", desc)
+		}
+		// Read results from fake API.
+		var outputAddressPoolList metallbv1beta1.AddressPoolList
+		var outputIPAddressPoolList metallbv1beta1.IPAddressPoolList
+		var outputBGPAdvertisementList metallbv1beta1.BGPAdvertisementList
+		var outputL2AdvertisementList metallbv1beta1.L2AdvertisementList
+		err = c.List(context.TODO(), &outputAddressPoolList)
+		if err != nil {
+			log.Fatal(err)
+		}
+		err = c.List(context.TODO(), &outputIPAddressPoolList)
+		if err != nil {
+			log.Fatal(err)
+		}
+		err = c.List(context.TODO(), &outputBGPAdvertisementList)
+		if err != nil {
+			log.Fatal(err)
+		}
+		err = c.List(context.TODO(), &outputL2AdvertisementList)
+		if err != nil {
+			log.Fatal(err)
+		}
+		if len(outputAddressPoolList.Items) != tc.outputAddressPoolCount {
+			log.Fatalf("TestOnlineMigration(%s): expected to see %d elements but got %d elements of type %s",
+				desc, tc.outputAddressPoolCount, len(outputAddressPoolList.Items), "AddressPool")
+		}
+		if len(outputIPAddressPoolList.Items) != tc.outputIPAddressPoolCount {
+			log.Fatalf("TestOnlineMigration(%s): expected to see %d elements but got %d elements of type %s",
+				desc, tc.outputIPAddressPoolCount, len(outputIPAddressPoolList.Items), "IPAddressPool")
+		}
+		if len(outputBGPAdvertisementList.Items) != tc.outputBGPAdvertisementCount {
+			log.Fatalf("TestOnlineMigration(%s): expected to see %d elements but got %d elements of type %s",
+				desc, tc.outputBGPAdvertisementCount, len(outputBGPAdvertisementList.Items), "BGPAdvertisement")
+		}
+		if len(outputL2AdvertisementList.Items) != tc.outputL2AdvertisementCount {
+			log.Fatalf("TestOnlineMigration(%s): expected to see %d elements but got %d elements of type %s",
+				desc, tc.outputL2AdvertisementCount, len(outputL2AdvertisementList.Items), "L2Advertisement")
 		}
 	}
 }

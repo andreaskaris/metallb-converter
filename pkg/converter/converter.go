@@ -11,6 +11,7 @@ import (
 	"strings"
 
 	metallbv1beta1 "go.universe.tf/metallb/api/v1beta1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
@@ -32,9 +33,37 @@ var (
 	stdout io.Writer = os.Stdout
 )
 
+type Objects interface {
+	LegacyObjects | CurrentObjects
+	Delete(client.Client) error
+	Create(client.Client) error
+}
+
 // LegacyObjects holds metallb legacy objects that shall be converted to the new format.
 type LegacyObjects struct {
 	AddressPoolList *metallbv1beta1.AddressPoolList
+}
+
+// Delete deletes all objects that belong to this object from the API.
+func (l LegacyObjects) Delete(c client.Client) error {
+	for _, ap := range l.AddressPoolList.Items {
+		err := c.Delete(context.TODO(), &ap)
+		if err != nil && !apierrors.IsNotFound(err) {
+			return err
+		}
+	}
+	return nil
+}
+
+// Create posts all objects to the API.
+func (l LegacyObjects) Create(c client.Client) error {
+	for _, ap := range l.AddressPoolList.Items {
+		err := c.Create(context.TODO(), &ap)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // CurrentObjects holds metallb current objects after conversion from the legacy format.
@@ -42,6 +71,52 @@ type CurrentObjects struct {
 	IPAddressPoolList    *metallbv1beta1.IPAddressPoolList
 	L2AdvertisementList  *metallbv1beta1.L2AdvertisementList
 	BGPAdvertisementList *metallbv1beta1.BGPAdvertisementList
+}
+
+// Delete deletes all instances from the API if they exist.
+func (c CurrentObjects) Delete(cl client.Client) error {
+	for _, iap := range c.IPAddressPoolList.Items {
+		err := cl.Delete(context.TODO(), &iap)
+		if err != nil && !apierrors.IsNotFound(err) {
+			return err
+		}
+	}
+	for _, ba := range c.BGPAdvertisementList.Items {
+		err := cl.Delete(context.TODO(), &ba)
+		if err != nil && !apierrors.IsNotFound(err) {
+			return err
+		}
+	}
+	for _, l2a := range c.L2AdvertisementList.Items {
+		err := cl.Delete(context.TODO(), &l2a)
+		if err != nil && !apierrors.IsNotFound(err) {
+			return err
+		}
+	}
+	return nil
+}
+
+// Create pods the object to the API.
+func (c CurrentObjects) Create(cl client.Client) error {
+	for _, iap := range c.IPAddressPoolList.Items {
+		err := cl.Create(context.TODO(), &iap)
+		if err != nil {
+			return err
+		}
+	}
+	for _, ba := range c.BGPAdvertisementList.Items {
+		err := cl.Create(context.TODO(), &ba)
+		if err != nil {
+			return err
+		}
+	}
+	for _, l2a := range c.L2AdvertisementList.Items {
+		err := cl.Create(context.TODO(), &l2a)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // ReadLegacyObjectsFromAPI reads legacy metallb objects from the API.
@@ -170,15 +245,15 @@ func Convert(legacyObjects *LegacyObjects) (*CurrentObjects, error) {
 	}, nil
 }
 
-// PrintCurrentObjects outputs the YAML or JSON representation of the currentObjects either to the targetDirectory or
-// to stdout if targetDirectory == "".
-func PrintCurrentObjects(currentObjects *CurrentObjects, targetDirectory string, toJSON bool) error {
+// PrintObjects outputs the YAML or JSON representation of the objects (currentObjects or legacyObjects) either to the
+// targetDirectory or to stdout if targetDirectory == "".
+func PrintObjects[T Objects](objects *T, targetDirectory string, toJSON bool) error {
 	var printer printers.ResourcePrinter = &printers.YAMLPrinter{}
 	if toJSON {
 		printer = &printers.JSONPrinter{}
 	}
 	// Iterate over all fields in the struct.
-	v := reflect.ValueOf(*currentObjects)
+	v := reflect.ValueOf(*objects)
 	for i := 0; i < v.NumField(); i++ {
 		// We expect that each field is a pointer to a List, so it must match runtime.Object.
 		currentObject, ok := v.Field(i).Interface().(runtime.Object)
@@ -225,4 +300,16 @@ func printObj(obj runtime.Object, printer printers.ResourcePrinter) (string, err
 		return "", err
 	}
 	return buf.String(), nil
+}
+
+// OnlineMigration receives a set of Objects to delete and a set of Objects to create. It will delete all Objects to
+// delete one by one. Then, it will create the Objects to create.
+// Currently, the function cannot rollback on errors; instead, it will leave resources in a potentially inconsistent
+// state.
+func OnlineMigration[T Objects, U Objects](c client.Client, toDelete T, toCreate U) error {
+	err := toDelete.Delete(c)
+	if err != nil {
+		return err
+	}
+	return toCreate.Create(c)
 }

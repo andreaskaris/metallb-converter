@@ -32,3 +32,12 @@ If you want to convert from an input directory containing legacy AddressPool def
 ~~~
 _build/metallb-converter -input-dir _examples/ -output-dir _output/
 ~~~
+
+If you want to use online migration:
+~~~
+export KUBECONFIG=<kubeconfig location>
+tmpdir="$(mktemp -d)"
+_build/metallb-converter -online-migration --backup-dir "${tmpdir}"
+~~~
+> NOTE: Online migration currently does not handle errors correctly. If a single resource cannot be deleted or created,
+the migration will abort without a rollback.
