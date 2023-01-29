@@ -18,11 +18,11 @@ var (
 		"WARNING: This will reset your BGP sessions, L2 advertisements, and SVC external IPs.\n"+
 		"Migration cannot rollback on errors; instead, it will leave resources in a potentially inconsistent state.",
 	)
-	backupDirFlag = flag.String("backup-dir", "", "Directory that backups of legacy AddressPools will we written to."+
+	backupDirFlag = flag.String("backup-dir", "", "Directory that backups of legacy AddressPools will we written to.\n"+
 		"Required when migration-flag is set.")
-	inDirFlag = flag.String("input-dir", "", "Input directory with legacy style YAML or JSON files."+
+	inDirFlag = flag.String("input-dir", "", "Input directory with legacy style YAML or JSON files.\n"+
 		"If empty, read directly from Kubernetes cluster.")
-	outDirFlag = flag.String("output-dir", "", "Output directory with new style YAML or JSON files."+
+	outDirFlag = flag.String("output-dir", "", "Output directory with new style YAML or JSON files.\n"+
 		"If empty, write to stdout.")
 )
 
