@@ -74,344 +74,363 @@ var validAddressPools0 = []metallbv1beta1.AddressPool{
 	},
 }
 
-var validAddressPools0YAML = `apiVersion: metallb.io/v1beta1
-items:
-- apiVersion: metallb.io/v1beta1
-  kind: IPAddressPool
-  metadata:
-    creationTimestamp: null
-    name: ap-bgp
-    namespace: metallb-system
-  spec:
-    addresses:
-    - 192.168.100.100
-    autoAssign: true
-  status: {}
-- apiVersion: metallb.io/v1beta1
-  kind: IPAddressPool
-  metadata:
-    creationTimestamp: null
-    name: ap-bgp2
-    namespace: metallb-system
-  spec:
-    addresses:
-    - 192.168.100.100
-    autoAssign: true
-  status: {}
-- apiVersion: metallb.io/v1beta1
-  kind: IPAddressPool
-  metadata:
-    creationTimestamp: null
-    name: ap-l2
-    namespace: metallb-system
-  spec:
-    addresses:
-    - 192.168.100.100
-    autoAssign: true
-  status: {}
-kind: IPAddressPoolList
-metadata: {}
----
-apiVersion: metallb.io/v1beta1
-items:
-- apiVersion: metallb.io/v1beta1
-  kind: L2Advertisement
-  metadata:
-    creationTimestamp: null
-    name: ap-l2-l2-advertisement
-    namespace: metallb-system
-  spec:
-    ipAddressPools:
-    - ap-l2
-  status: {}
-kind: L2AdvertisementList
-metadata: {}
----
-apiVersion: metallb.io/v1beta1
-items:
-- apiVersion: metallb.io/v1beta1
-  kind: BGPAdvertisement
-  metadata:
-    creationTimestamp: null
-    name: ap-bgp-bgp-advertisement-0
-    namespace: metallb-system
-  spec:
-    aggregationLength: 32
+var validAddressPools0BackupFiles = map[string]string{
+	"AddressPool.yaml": `apiVersion: metallb.io/v1beta1
+kind: AddressPool
+metadata:
+  creationTimestamp: null
+  name: ap-bgp
+  namespace: metallb-system
+spec:
+  addresses:
+  - 192.168.100.100
+  autoAssign: true
+  bgpAdvertisements:
+  - aggregationLength: 32
     aggregationLengthV6: 64
     communities:
     - 65432:12345
-    ipAddressPools:
-    - ap-bgp
     localPref: 10
-  status: {}
-- apiVersion: metallb.io/v1beta1
-  kind: BGPAdvertisement
-  metadata:
-    creationTimestamp: null
-    name: ap-bgp-bgp-advertisement-1
-    namespace: metallb-system
-  spec:
-    aggregationLength: 32
+  - aggregationLength: 32
     aggregationLengthV6: 64
     communities:
     - 65433:12346
-    ipAddressPools:
-    - ap-bgp
     localPref: 11
-  status: {}
-- apiVersion: metallb.io/v1beta1
-  kind: BGPAdvertisement
-  metadata:
-    creationTimestamp: null
-    name: ap-bgp2-bgp-advertisement-0
-    namespace: metallb-system
-  spec:
-    ipAddressPools:
-    - ap-bgp2
-  status: {}
-kind: BGPAdvertisementList
-metadata: {}`
+  protocol: bgp
+status: {}
+---
+apiVersion: metallb.io/v1beta1
+kind: AddressPool
+metadata:
+  creationTimestamp: null
+  name: ap-bgp2
+  namespace: metallb-system
+spec:
+  addresses:
+  - 192.168.100.100
+  autoAssign: true
+  protocol: bgp
+status: {}
+---
+apiVersion: metallb.io/v1beta1
+kind: AddressPool
+metadata:
+  creationTimestamp: null
+  name: ap-l2
+  namespace: metallb-system
+spec:
+  addresses:
+  - 192.168.100.100
+  autoAssign: true
+  protocol: layer2
+status: {}
+`,
+}
+
+var validAddressPools0YAML = `apiVersion: metallb.io/v1beta1
+kind: IPAddressPool
+metadata:
+  creationTimestamp: null
+  name: ap-bgp
+  namespace: metallb-system
+spec:
+  addresses:
+  - 192.168.100.100
+  autoAssign: true
+status: {}
+---
+apiVersion: metallb.io/v1beta1
+kind: IPAddressPool
+metadata:
+  creationTimestamp: null
+  name: ap-bgp2
+  namespace: metallb-system
+spec:
+  addresses:
+  - 192.168.100.100
+  autoAssign: true
+status: {}
+---
+apiVersion: metallb.io/v1beta1
+kind: IPAddressPool
+metadata:
+  creationTimestamp: null
+  name: ap-l2
+  namespace: metallb-system
+spec:
+  addresses:
+  - 192.168.100.100
+  autoAssign: true
+status: {}
+---
+apiVersion: metallb.io/v1beta1
+kind: L2Advertisement
+metadata:
+  creationTimestamp: null
+  name: ap-l2-l2-advertisement
+  namespace: metallb-system
+spec:
+  ipAddressPools:
+  - ap-l2
+status: {}
+---
+apiVersion: metallb.io/v1beta1
+kind: BGPAdvertisement
+metadata:
+  creationTimestamp: null
+  name: ap-bgp-bgp-advertisement-0
+  namespace: metallb-system
+spec:
+  aggregationLength: 32
+  aggregationLengthV6: 64
+  communities:
+  - 65432:12345
+  ipAddressPools:
+  - ap-bgp
+  localPref: 10
+status: {}
+---
+apiVersion: metallb.io/v1beta1
+kind: BGPAdvertisement
+metadata:
+  creationTimestamp: null
+  name: ap-bgp-bgp-advertisement-1
+  namespace: metallb-system
+spec:
+  aggregationLength: 32
+  aggregationLengthV6: 64
+  communities:
+  - 65433:12346
+  ipAddressPools:
+  - ap-bgp
+  localPref: 11
+status: {}
+---
+apiVersion: metallb.io/v1beta1
+kind: BGPAdvertisement
+metadata:
+  creationTimestamp: null
+  name: ap-bgp2-bgp-advertisement-0
+  namespace: metallb-system
+spec:
+  ipAddressPools:
+  - ap-bgp2
+status: {}
+`
 
 var validAddressPools0JSON = `{
-    "kind": "IPAddressPoolList",
+    "kind": "IPAddressPool",
     "apiVersion": "metallb.io/v1beta1",
-    "metadata": {},
-    "items": [
-        {
-            "kind": "IPAddressPool",
-            "apiVersion": "metallb.io/v1beta1",
-            "metadata": {
-                "name": "ap-bgp",
-                "namespace": "metallb-system",
-                "creationTimestamp": null
-            },
-            "spec": {
-                "addresses": [
-                    "192.168.100.100"
-                ],
-                "autoAssign": true
-            },
-            "status": {}
-        },
-        {
-            "kind": "IPAddressPool",
-            "apiVersion": "metallb.io/v1beta1",
-            "metadata": {
-                "name": "ap-bgp2",
-                "namespace": "metallb-system",
-                "creationTimestamp": null
-            },
-            "spec": {
-                "addresses": [
-                    "192.168.100.100"
-                ],
-                "autoAssign": true
-            },
-            "status": {}
-        },
-        {
-            "kind": "IPAddressPool",
-            "apiVersion": "metallb.io/v1beta1",
-            "metadata": {
-                "name": "ap-l2",
-                "namespace": "metallb-system",
-                "creationTimestamp": null
-            },
-            "spec": {
-                "addresses": [
-                    "192.168.100.100"
-                ],
-                "autoAssign": true
-            },
-            "status": {}
-        }
-    ]
+    "metadata": {
+        "name": "ap-bgp",
+        "namespace": "metallb-system",
+        "creationTimestamp": null
+    },
+    "spec": {
+        "addresses": [
+            "192.168.100.100"
+        ],
+        "autoAssign": true
+    },
+    "status": {}
 }
 {
-    "kind": "L2AdvertisementList",
+    "kind": "IPAddressPool",
     "apiVersion": "metallb.io/v1beta1",
-    "metadata": {},
-    "items": [
-        {
-            "kind": "L2Advertisement",
-            "apiVersion": "metallb.io/v1beta1",
-            "metadata": {
-                "name": "ap-l2-l2-advertisement",
-                "namespace": "metallb-system",
-                "creationTimestamp": null
-            },
-            "spec": {
-                "ipAddressPools": [
-                    "ap-l2"
-                ]
-            },
-            "status": {}
-        }
-    ]
+    "metadata": {
+        "name": "ap-bgp2",
+        "namespace": "metallb-system",
+        "creationTimestamp": null
+    },
+    "spec": {
+        "addresses": [
+            "192.168.100.100"
+        ],
+        "autoAssign": true
+    },
+    "status": {}
 }
 {
-    "kind": "BGPAdvertisementList",
+    "kind": "IPAddressPool",
     "apiVersion": "metallb.io/v1beta1",
-    "metadata": {},
-    "items": [
-        {
-            "kind": "BGPAdvertisement",
-            "apiVersion": "metallb.io/v1beta1",
-            "metadata": {
-                "name": "ap-bgp-bgp-advertisement-0",
-                "namespace": "metallb-system",
-                "creationTimestamp": null
-            },
-            "spec": {
-                "aggregationLength": 32,
-                "aggregationLengthV6": 64,
-                "localPref": 10,
-                "communities": [
-                    "65432:12345"
-                ],
-                "ipAddressPools": [
-                    "ap-bgp"
-                ]
-            },
-            "status": {}
-        },
-        {
-            "kind": "BGPAdvertisement",
-            "apiVersion": "metallb.io/v1beta1",
-            "metadata": {
-                "name": "ap-bgp-bgp-advertisement-1",
-                "namespace": "metallb-system",
-                "creationTimestamp": null
-            },
-            "spec": {
-                "aggregationLength": 32,
-                "aggregationLengthV6": 64,
-                "localPref": 11,
-                "communities": [
-                    "65433:12346"
-                ],
-                "ipAddressPools": [
-                    "ap-bgp"
-                ]
-            },
-            "status": {}
-        },
-        {
-            "kind": "BGPAdvertisement",
-            "apiVersion": "metallb.io/v1beta1",
-            "metadata": {
-                "name": "ap-bgp2-bgp-advertisement-0",
-                "namespace": "metallb-system",
-                "creationTimestamp": null
-            },
-            "spec": {
-                "ipAddressPools": [
-                    "ap-bgp2"
-                ]
-            },
-            "status": {}
-        }
-    ]
-}`
+    "metadata": {
+        "name": "ap-l2",
+        "namespace": "metallb-system",
+        "creationTimestamp": null
+    },
+    "spec": {
+        "addresses": [
+            "192.168.100.100"
+        ],
+        "autoAssign": true
+    },
+    "status": {}
+}
+{
+    "kind": "L2Advertisement",
+    "apiVersion": "metallb.io/v1beta1",
+    "metadata": {
+        "name": "ap-l2-l2-advertisement",
+        "namespace": "metallb-system",
+        "creationTimestamp": null
+    },
+    "spec": {
+        "ipAddressPools": [
+            "ap-l2"
+        ]
+    },
+    "status": {}
+}
+{
+    "kind": "BGPAdvertisement",
+    "apiVersion": "metallb.io/v1beta1",
+    "metadata": {
+        "name": "ap-bgp-bgp-advertisement-0",
+        "namespace": "metallb-system",
+        "creationTimestamp": null
+    },
+    "spec": {
+        "aggregationLength": 32,
+        "aggregationLengthV6": 64,
+        "localPref": 10,
+        "communities": [
+            "65432:12345"
+        ],
+        "ipAddressPools": [
+            "ap-bgp"
+        ]
+    },
+    "status": {}
+}
+{
+    "kind": "BGPAdvertisement",
+    "apiVersion": "metallb.io/v1beta1",
+    "metadata": {
+        "name": "ap-bgp-bgp-advertisement-1",
+        "namespace": "metallb-system",
+        "creationTimestamp": null
+    },
+    "spec": {
+        "aggregationLength": 32,
+        "aggregationLengthV6": 64,
+        "localPref": 11,
+        "communities": [
+            "65433:12346"
+        ],
+        "ipAddressPools": [
+            "ap-bgp"
+        ]
+    },
+    "status": {}
+}
+{
+    "kind": "BGPAdvertisement",
+    "apiVersion": "metallb.io/v1beta1",
+    "metadata": {
+        "name": "ap-bgp2-bgp-advertisement-0",
+        "namespace": "metallb-system",
+        "creationTimestamp": null
+    },
+    "spec": {
+        "ipAddressPools": [
+            "ap-bgp2"
+        ]
+    },
+    "status": {}
+}
+`
 
 var validAddressPools0Files = map[string]string{
-	"IPAddressPoolList.yaml": `apiVersion: metallb.io/v1beta1
-items:
-- apiVersion: metallb.io/v1beta1
-  kind: IPAddressPool
-  metadata:
-    creationTimestamp: null
-    name: ap-bgp
-    namespace: metallb-system
-  spec:
-    addresses:
-    - 192.168.100.100
-    autoAssign: true
-  status: {}
-- apiVersion: metallb.io/v1beta1
-  kind: IPAddressPool
-  metadata:
-    creationTimestamp: null
-    name: ap-bgp2
-    namespace: metallb-system
-  spec:
-    addresses:
-    - 192.168.100.100
-    autoAssign: true
-  status: {}
-- apiVersion: metallb.io/v1beta1
-  kind: IPAddressPool
-  metadata:
-    creationTimestamp: null
-    name: ap-l2
-    namespace: metallb-system
-  spec:
-    addresses:
-    - 192.168.100.100
-    autoAssign: true
-  status: {}
-kind: IPAddressPoolList
-metadata: {}`,
-	"L2AdvertisementList.yaml": `---
+	"IPAddressPool.yaml": `apiVersion: metallb.io/v1beta1
+kind: IPAddressPool
+metadata:
+  creationTimestamp: null
+  name: ap-bgp
+  namespace: metallb-system
+spec:
+  addresses:
+  - 192.168.100.100
+  autoAssign: true
+status: {}
+---
 apiVersion: metallb.io/v1beta1
-items:
-- apiVersion: metallb.io/v1beta1
-  kind: L2Advertisement
-  metadata:
-    creationTimestamp: null
-    name: ap-l2-l2-advertisement
-    namespace: metallb-system
-  spec:
-    ipAddressPools:
-    - ap-l2
-  status: {}
-kind: L2AdvertisementList
-metadata: {}`,
-	"BGPAdvertisementList.yaml": `---
+kind: IPAddressPool
+metadata:
+  creationTimestamp: null
+  name: ap-bgp2
+  namespace: metallb-system
+spec:
+  addresses:
+  - 192.168.100.100
+  autoAssign: true
+status: {}
+---
 apiVersion: metallb.io/v1beta1
-items:
-- apiVersion: metallb.io/v1beta1
-  kind: BGPAdvertisement
-  metadata:
-    creationTimestamp: null
-    name: ap-bgp-bgp-advertisement-0
-    namespace: metallb-system
-  spec:
-    aggregationLength: 32
-    aggregationLengthV6: 64
-    communities:
-    - 65432:12345
-    ipAddressPools:
-    - ap-bgp
-    localPref: 10
-  status: {}
-- apiVersion: metallb.io/v1beta1
-  kind: BGPAdvertisement
-  metadata:
-    creationTimestamp: null
-    name: ap-bgp-bgp-advertisement-1
-    namespace: metallb-system
-  spec:
-    aggregationLength: 32
-    aggregationLengthV6: 64
-    communities:
-    - 65433:12346
-    ipAddressPools:
-    - ap-bgp
-    localPref: 11
-  status: {}
-- apiVersion: metallb.io/v1beta1
-  kind: BGPAdvertisement
-  metadata:
-    creationTimestamp: null
-    name: ap-bgp2-bgp-advertisement-0
-    namespace: metallb-system
-  spec:
-    ipAddressPools:
-    - ap-bgp2
-  status: {}
-kind: BGPAdvertisementList
-metadata: {}`,
+kind: IPAddressPool
+metadata:
+  creationTimestamp: null
+  name: ap-l2
+  namespace: metallb-system
+spec:
+  addresses:
+  - 192.168.100.100
+  autoAssign: true
+status: {}
+`,
+	"L2Advertisement.yaml": `apiVersion: metallb.io/v1beta1
+kind: L2Advertisement
+metadata:
+  creationTimestamp: null
+  name: ap-l2-l2-advertisement
+  namespace: metallb-system
+spec:
+  ipAddressPools:
+  - ap-l2
+status: {}
+`,
+	"BGPAdvertisement.yaml": `apiVersion: metallb.io/v1beta1
+kind: BGPAdvertisement
+metadata:
+  creationTimestamp: null
+  name: ap-bgp-bgp-advertisement-0
+  namespace: metallb-system
+spec:
+  aggregationLength: 32
+  aggregationLengthV6: 64
+  communities:
+  - 65432:12345
+  ipAddressPools:
+  - ap-bgp
+  localPref: 10
+status: {}
+---
+apiVersion: metallb.io/v1beta1
+kind: BGPAdvertisement
+metadata:
+  creationTimestamp: null
+  name: ap-bgp-bgp-advertisement-1
+  namespace: metallb-system
+spec:
+  aggregationLength: 32
+  aggregationLengthV6: 64
+  communities:
+  - 65433:12346
+  ipAddressPools:
+  - ap-bgp
+  localPref: 11
+status: {}
+---
+apiVersion: metallb.io/v1beta1
+kind: BGPAdvertisement
+metadata:
+  creationTimestamp: null
+  name: ap-bgp2-bgp-advertisement-0
+  namespace: metallb-system
+spec:
+  ipAddressPools:
+  - ap-bgp2
+status: {}
+`,
 }
 
 var validAddressPools1 = []metallbv1beta1.AddressPool{
@@ -430,35 +449,28 @@ var validAddressPools1 = []metallbv1beta1.AddressPool{
 }
 
 var validAddressPools1YAML = `apiVersion: metallb.io/v1beta1
-items:
-- apiVersion: metallb.io/v1beta1
-  kind: IPAddressPool
-  metadata:
-    creationTimestamp: null
-    name: ap-bgp
-    namespace: metallb-system
-  spec:
-    addresses:
-    - 192.168.100.100
-    autoAssign: true
-  status: {}
-kind: IPAddressPoolList
-metadata: {}
+kind: IPAddressPool
+metadata:
+  creationTimestamp: null
+  name: ap-bgp
+  namespace: metallb-system
+spec:
+  addresses:
+  - 192.168.100.100
+  autoAssign: true
+status: {}
 ---
 apiVersion: metallb.io/v1beta1
-items:
-- apiVersion: metallb.io/v1beta1
-  kind: BGPAdvertisement
-  metadata:
-    creationTimestamp: null
-    name: ap-bgp-bgp-advertisement-0
-    namespace: metallb-system
-  spec:
-    ipAddressPools:
-    - ap-bgp
-  status: {}
-kind: BGPAdvertisementList
-metadata: {}`
+kind: BGPAdvertisement
+metadata:
+  creationTimestamp: null
+  name: ap-bgp-bgp-advertisement-0
+  namespace: metallb-system
+spec:
+  ipAddressPools:
+  - ap-bgp
+status: {}
+`
 
 // This is expected to match validAddressPool0 but in its file representation.
 var validAddressPoolFiles = map[string]string{
@@ -508,111 +520,106 @@ spec:
   addresses:
   - 2000::200-2000::203
   autoAssign: true
-  protocol: layer2`,
+  protocol: layer2
+`,
 }
 
 var validAddressPoolFilesYAML = `apiVersion: metallb.io/v1beta1
-items:
-- apiVersion: metallb.io/v1beta1
-  kind: IPAddressPool
-  metadata:
-    creationTimestamp: null
-    name: bgp4
-    namespace: metallb-system
-  spec:
-    addresses:
-    - 192.168.0.100-192.168.0.103
-    autoAssign: true
-  status: {}
-- apiVersion: metallb.io/v1beta1
-  kind: IPAddressPool
-  metadata:
-    creationTimestamp: null
-    name: bgp6
-    namespace: metallb-system
-  spec:
-    addresses:
-    - 2000::100-2000::103
-    autoAssign: true
-  status: {}
-- apiVersion: metallb.io/v1beta1
-  kind: IPAddressPool
-  metadata:
-    creationTimestamp: null
-    name: l24
-    namespace: metallb-system
-  spec:
-    addresses:
-    - 192.168.0.200-192.168.0.203
-    autoAssign: true
-  status: {}
-- apiVersion: metallb.io/v1beta1
-  kind: IPAddressPool
-  metadata:
-    creationTimestamp: null
-    name: l26
-    namespace: metallb-system
-  spec:
-    addresses:
-    - 2000::200-2000::203
-    autoAssign: true
-  status: {}
-kind: IPAddressPoolList
-metadata: {}
+kind: IPAddressPool
+metadata:
+  creationTimestamp: null
+  name: bgp4
+  namespace: metallb-system
+spec:
+  addresses:
+  - 192.168.0.100-192.168.0.103
+  autoAssign: true
+status: {}
 ---
 apiVersion: metallb.io/v1beta1
-items:
-- apiVersion: metallb.io/v1beta1
-  kind: L2Advertisement
-  metadata:
-    creationTimestamp: null
-    name: l24-l2-advertisement
-    namespace: metallb-system
-  spec:
-    ipAddressPools:
-    - l24
-  status: {}
-- apiVersion: metallb.io/v1beta1
-  kind: L2Advertisement
-  metadata:
-    creationTimestamp: null
-    name: l26-l2-advertisement
-    namespace: metallb-system
-  spec:
-    ipAddressPools:
-    - l26
-  status: {}
-kind: L2AdvertisementList
-metadata: {}
+kind: IPAddressPool
+metadata:
+  creationTimestamp: null
+  name: bgp6
+  namespace: metallb-system
+spec:
+  addresses:
+  - 2000::100-2000::103
+  autoAssign: true
+status: {}
 ---
 apiVersion: metallb.io/v1beta1
-items:
-- apiVersion: metallb.io/v1beta1
-  kind: BGPAdvertisement
-  metadata:
-    creationTimestamp: null
-    name: bgp4-bgp-advertisement-0
-    namespace: metallb-system
-  spec:
-    communities:
-    - 65535:65282
-    ipAddressPools:
-    - bgp4
-  status: {}
-- apiVersion: metallb.io/v1beta1
-  kind: BGPAdvertisement
-  metadata:
-    creationTimestamp: null
-    name: bgp6-bgp-advertisement-0
-    namespace: metallb-system
-  spec:
-    communities:
-    - 65535:65282
-    ipAddressPools:
-    - bgp6
-  status: {}
-kind: BGPAdvertisementList
-metadata: {}`
+kind: IPAddressPool
+metadata:
+  creationTimestamp: null
+  name: l24
+  namespace: metallb-system
+spec:
+  addresses:
+  - 192.168.0.200-192.168.0.203
+  autoAssign: true
+status: {}
+---
+apiVersion: metallb.io/v1beta1
+kind: IPAddressPool
+metadata:
+  creationTimestamp: null
+  name: l26
+  namespace: metallb-system
+spec:
+  addresses:
+  - 2000::200-2000::203
+  autoAssign: true
+status: {}
+---
+apiVersion: metallb.io/v1beta1
+kind: L2Advertisement
+metadata:
+  creationTimestamp: null
+  name: l24-l2-advertisement
+  namespace: metallb-system
+spec:
+  ipAddressPools:
+  - l24
+status: {}
+---
+apiVersion: metallb.io/v1beta1
+kind: L2Advertisement
+metadata:
+  creationTimestamp: null
+  name: l26-l2-advertisement
+  namespace: metallb-system
+spec:
+  ipAddressPools:
+  - l26
+status: {}
+---
+apiVersion: metallb.io/v1beta1
+kind: BGPAdvertisement
+metadata:
+  creationTimestamp: null
+  name: bgp4-bgp-advertisement-0
+  namespace: metallb-system
+spec:
+  communities:
+  - 65535:65282
+  ipAddressPools:
+  - bgp4
+status: {}
+---
+apiVersion: metallb.io/v1beta1
+kind: BGPAdvertisement
+metadata:
+  creationTimestamp: null
+  name: bgp6-bgp-advertisement-0
+  namespace: metallb-system
+spec:
+  communities:
+  - 65535:65282
+  ipAddressPools:
+  - bgp6
+status: {}
+`
 
 func TestReadLegacyObjectsFromAPI(t *testing.T) {
 	var scheme = runtime.NewScheme()
@@ -828,8 +835,8 @@ func TestPrintObj(t *testing.T) {
 	}
 }
 
+// TODO: The transformer function at the moment does not do anything. Address this at some point and test failures.
 func TestOnlineMigration(t *testing.T) {
-	backupDir := ""
 	json := false
 	var scheme = runtime.NewScheme()
 	err := metallbv1beta1.AddToScheme(scheme)
@@ -845,6 +852,8 @@ func TestOnlineMigration(t *testing.T) {
 		outputL2AdvertisementCount  int
 		errorStr                    string
 		transformerFunc             func(client.Client)
+		backupDir                   string
+		expectedBackupFiles         map[string]string
 	}{
 		"test case 0": {
 			inputAddressPoolList:        validAddressPools0,
@@ -878,35 +887,24 @@ func TestOnlineMigration(t *testing.T) {
 				}
 			},
 		},
-		/*"test case 2": {
+		"test case 2": {
 			inputAddressPoolList:        validAddressPools0,
-			outputAddressPoolCount:      3,
-			outputIPAddressPoolCount:    0,
-			outputBGPAdvertisementCount: 0,
-			outputL2AdvertisementCount:  0,
-			errorStr:                    "already exists",
-			transformerFunc: func(c client.Client) {
-				iap := metallbv1beta1.IPAddressPool{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "ap-l2",
-						Namespace: "metallb-system",
-					},
-					Spec: metallbv1beta1.IPAddressPoolSpec{
-						Addresses:  []string{"192.168.100.100"},
-						AutoAssign: pointer.Bool(true),
-					},
-					Status: metallbv1beta1.IPAddressPoolStatus{},
-				}
-				err := c.Create(context.TODO(), &iap)
-				if err != nil {
-					t.Fatalf("TestOnlineMigration(test case 2): got error in transformer function on creation, err: %q",
-						err)
-				}
-
-			},
-		},*/
+			outputAddressPoolCount:      0,
+			outputIPAddressPoolCount:    3,
+			outputBGPAdvertisementCount: 3,
+			outputL2AdvertisementCount:  1,
+			transformerFunc:             nil,
+			backupDir:                   "tmpDir",
+			expectedBackupFiles:         validAddressPools0BackupFiles,
+		},
 	}
 	for desc, tc := range tcs {
+		// Determine backup dir (and create temp dir if necessary).
+		backupDir := tc.backupDir
+		if tc.backupDir == "tmpDir" {
+			backupDir = t.TempDir()
+		}
+		// Build scheme.
 		c := fake.NewClientBuilder().WithScheme(scheme).Build()
 		// Create objects in fake API.
 		for _, ap := range tc.inputAddressPoolList {
@@ -925,6 +923,19 @@ func TestOnlineMigration(t *testing.T) {
 			continue
 		} else if tc.errorStr != "" {
 			log.Fatalf("TestOnlineMigration(%s): expected error but got none instead", desc)
+		}
+		// Make sure that backup files were correctly written.
+		if backupDir != "" {
+			for expectedFileName, expectedFileContent := range tc.expectedBackupFiles {
+				generatedContent, err := os.ReadFile(path.Join(backupDir, expectedFileName))
+				if err != nil {
+					t.Fatalf("TestConvert(%s): Could not read expected file %s, err: %q", desc, expectedFileName, err)
+				}
+				if expectedFileContent != string(generatedContent) {
+					t.Fatalf("TestConvert(%s): File content mismatch for file %s.\nGot\n'%s'\nExpected\n'%s'",
+						desc, expectedFileName, generatedContent, expectedFileContent)
+				}
+			}
 		}
 		// Read results from fake API.
 		var outputAddressPoolList metallbv1beta1.AddressPoolList
@@ -963,5 +974,42 @@ func TestOnlineMigration(t *testing.T) {
 			log.Fatalf("TestOnlineMigration(%s): expected to see %d elements but got %d elements of type %s",
 				desc, tc.outputL2AdvertisementCount, len(outputL2AdvertisementList.Items), "L2Advertisement")
 		}
+	}
+}
+
+// TODO: These tests would need to be improved, at the moment we are only checking if errors are reported.
+func TestObjectCreateAndDelete(t *testing.T) {
+	var scheme = runtime.NewScheme()
+	err := metallbv1beta1.AddToScheme(scheme)
+	if err != nil {
+		t.Fatalf("TestObjectCreateAndDelete: error adding to scheme, err: %q", err)
+	}
+	c := fake.NewClientBuilder().WithScheme(scheme).Build()
+	// Create objects in fake API.
+	for _, ap := range validAddressPools0 {
+		err := c.Create(context.TODO(), &ap)
+		if err != nil {
+			t.Fatalf("TestObjectCreateAndDelete: error building fake client, err: %q", err)
+		}
+	}
+	legacyObjects, err := ReadLegacyObjectsFromAPI(c, 0)
+	if err != nil {
+		t.Fatalf("TestObjectCreateAndDelete: error reading legacy objects from API, err: %q", err)
+	}
+	if err := legacyObjects.Delete(c); err != nil {
+		t.Fatalf("TestObjectCreateAndDelete: error deleting legacy objects from API, err: %q", err)
+	}
+	if err := legacyObjects.Create(c); err != nil {
+		t.Fatalf("TestObjectCreateAndDelete: error creating legacy objects again in API, err: %q", err)
+	}
+	currentObjects, err := legacyObjects.Convert()
+	if err != nil {
+		t.Fatalf("TestObjectCreateAndDelete: error converting legacy objects in API, err: %q", err)
+	}
+	if err := currentObjects.Create(c); err != nil {
+		t.Fatalf("TestObjectCreateAndDelete: error creating current objects in API, err: %q", err)
+	}
+	if err := currentObjects.Delete(c); err != nil {
+		t.Fatalf("TestObjectCreateAndDelete: error deleting current objects from API, err: %q", err)
 	}
 }
