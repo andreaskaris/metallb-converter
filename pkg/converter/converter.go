@@ -163,8 +163,12 @@ func (l LegacyObjects) Print(targetDirectory string, toJSON bool) error {
 	}
 
 	if targetDirectory != "" {
+		fileExtension := "yaml"
+		if toJSON {
+			fileExtension = "json"
+		}
 		f, err := os.OpenFile(
-			path.Join(targetDirectory, fmt.Sprintf("%s.yaml", "AddressPool")),
+			path.Join(targetDirectory, fmt.Sprintf("%s.%s", "AddressPool", fileExtension)),
 			os.O_RDWR|os.O_CREATE|os.O_TRUNC,
 			0644,
 		)
@@ -270,8 +274,12 @@ func (objects CurrentObjects) Print(targetDirectory string, toJSON bool) error {
 		// We know that we have a least one element, get its type.
 		kind := runtimeObjects[0].GetObjectKind().GroupVersionKind().Kind
 		if targetDirectory != "" {
+			fileExtension := "yaml"
+			if toJSON {
+				fileExtension = "json"
+			}
 			f, err := os.OpenFile(
-				path.Join(targetDirectory, fmt.Sprintf("%s.yaml", kind)),
+				path.Join(targetDirectory, fmt.Sprintf("%s.%s", kind, fileExtension)),
 				os.O_RDWR|os.O_CREATE|os.O_TRUNC,
 				0644,
 			)
