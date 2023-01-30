@@ -4,6 +4,10 @@ This is a little converter tool from the legacy AddressPool CRs to the current I
 read resources from all namespaces in the cluster, convert them and print the result to standard out or to a provided
 target directory. Alternatively, you can also provide an input directory to convert AddressPools stored in YAML files.
 
+## Getting the tool
+
+Either get the latest release from the [releases page](https://github.com/andreaskaris/metallb-converter/releases) or build the latest version with the instructions below.
+
 ## Building the tool
 
 To build the tool, run:
